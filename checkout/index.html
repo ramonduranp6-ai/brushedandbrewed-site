@@ -3,6 +3,23 @@
 <title>Checkout - Brushed & Brewed</title>
 <meta name="description" content="Secure checkout redirect for Brushed & Brewed orders from Facebook and Instagram Shops.">
 <link rel="stylesheet" href="/assets/style.css">
+<style>
+.cart-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+.cart-table th,.cart-table td{padding:8px 10px;border-bottom:1px solid #eee2d2;text-align:left}
+.cart-table th{color:var(--muted);font-weight:normal;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+.cart-table td:nth-child(2),.cart-table td:nth-child(3),.cart-table td:nth-child(4),
+.cart-table th:nth-child(2),.cart-table th:nth-child(3),.cart-table th:nth-child(4){text-align:right;white-space:nowrap}
+.cart-summary{max-width:360px;margin:16px 0 20px auto}
+.cart-summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:14px}
+.cart-summary-total{font-weight:bold;font-size:17px;border-top:1px solid #e6ddd0;margin-top:4px;padding-top:8px;color:var(--accent)}
+.cart-note{font-size:12px;color:var(--muted);text-align:right;margin:4px 0 0}
+.cart-coupon{font-size:13px;text-align:right;margin:6px 0 0}
+.cart-cta{text-align:center;margin:20px 0 6px}
+a.btn-big{font-size:18px;padding:14px 28px;border-radius:8px}
+.cart-redirect{text-align:center;color:var(--muted);font-size:13px}
+.cart-links{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.cart-links a.btn{text-align:center}
+</style>
 </head><body>
 <header><h1>Brushed & Brewed</h1><p>Handpainted watercolor mugs &amp; gifts</p></header>
 <main class="product" id="app">
@@ -15,6 +32,13 @@ var PRODUCTS = {"4578445395":{"t":"Baby to Now Mug Set of 4 - Custom Growth Time
 var SHOP_HOME = "https://brushedandbrewedco.etsy.com/";
 (function () {
   function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function parsePrice(str) {
+    var m = /^([\d.]+)\s*([A-Za-z]{3})$/.exec(String(str || '').trim());
+    if (!m) return { amount: 0, currency: 'USD' };
+    return { amount: parseFloat(m[1]), currency: m[2].toUpperCase() };
+  }
+  function fmt(amount, currency) { return amount.toFixed(2) + ' ' + currency; }
+
   var app = document.getElementById('app');
   var qs = new URLSearchParams(window.location.search);
   var productsParam = qs.get('products');
@@ -28,25 +52,47 @@ var SHOP_HOME = "https://brushedandbrewedco.etsy.com/";
     var id = (parts[0] || '').trim();
     var qty = parseInt(parts[1], 10);
     if (!qty || qty < 1) qty = 1;
-    if (PRODUCTS[id]) items.push({ id: id, qty: qty, info: PRODUCTS[id] });
+    if (PRODUCTS[id]) {
+      var priceInfo = parsePrice(PRODUCTS[id].p);
+      items.push({ id: id, qty: qty, info: PRODUCTS[id], unit: priceInfo.amount, currency: priceInfo.currency, line: priceInfo.amount * qty });
+    }
   });
 
   if (items.length === 0) { window.location.replace(SHOP_HOME); return; }
 
+  var currency = items[0].currency;
+  var subtotal = 0;
+  items.forEach(function (it) { subtotal += it.line; });
+
+  var rowsHtml = '';
+  items.forEach(function (it) {
+    rowsHtml += '<tr><td class="cart-item-name">' + esc(it.info.t) + '</td><td>' + fmt(it.unit, it.currency) + '</td><td>' + it.qty + '</td><td>' + fmt(it.line, it.currency) + '</td></tr>';
+  });
+  var tableHtml = '<table class="cart-table"><thead><tr><th>Item</th><th>Unit price</th><th>Qty</th><th>Line total</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+
+  var couponHtml = coupon ? '<p class="cart-coupon">Coupon: <strong>' + esc(coupon) + '</strong> &mdash; applied at Etsy checkout</p>' : '';
+  var summaryHtml = '<div class="cart-summary">' +
+    '<div class="cart-summary-row"><span>Subtotal</span><span>' + fmt(subtotal, currency) + '</span></div>' +
+    '<div class="cart-summary-row cart-summary-total"><span>Total</span><span>' + fmt(subtotal, currency) + '</span></div>' +
+    '<p class="cart-note">Shipping &amp; taxes: calculated at Etsy checkout</p>' + couponHtml + '</div>';
+
   if (items.length === 1) {
     var url = items[0].info.u;
-    var couponHtml = coupon ? '<p>Coupon code: <strong>' + esc(coupon) + '</strong> &mdash; enter it at checkout on Etsy.</p>' : '';
-    app.innerHTML = '<h1>Redirecting to checkout</h1><p>Taking you to &quot;' + esc(items[0].info.t) + '&quot; (qty ' + items[0].qty + ') on Etsy&hellip;</p><p>If you are not redirected, <a href="' + url + '">click here</a>.</p>' + couponHtml;
-    window.location.replace(url);
+    app.innerHTML = '<h1>Your order</h1>' + tableHtml + summaryHtml +
+      '<p class="cart-cta"><a class="btn btn-big" href="' + url + '">Buy on Etsy</a></p>' +
+      '<p class="cart-redirect">Taking you to Etsy automatically in a few seconds&hellip; if nothing happens, use the button above.</p>';
+    setTimeout(function () { window.location.href = url; }, 4000);
     return;
   }
 
-  var cardsHtml = '';
+  var linksHtml = '';
   items.forEach(function (it) {
-    cardsHtml += '<div class="card"><div class="body"><h3>' + esc(it.info.t) + '</h3><div class="price">' + esc(it.info.p) + '</div><p>Qty: ' + it.qty + '</p><a class="btn" href="' + it.info.u + '" target="_blank" rel="noopener">Buy on Etsy</a></div></div>';
+    linksHtml += '<a class="btn" href="' + it.info.u + '" target="_blank" rel="noopener">Buy &quot;' + esc(it.info.t) + '&quot; on Etsy</a>';
   });
-  var couponBlock = coupon ? '<p>Coupon code: <strong>' + esc(coupon) + '</strong> &mdash; enter it at checkout on each Etsy order.</p>' : '';
-  app.innerHTML = '<h1>Your order (' + items.length + ' items)</h1><p>Etsy checks out one listing at a time, so open each item below to complete your purchase.</p>' + couponBlock + '<div class="grid">' + cardsHtml + '</div><p><a href="' + SHOP_HOME + '">Or browse the full shop</a></p>';
+  app.innerHTML = '<h1>Your order (' + items.length + ' items)</h1>' + tableHtml + summaryHtml +
+    '<p>Etsy checks out one listing at a time, so open each item below to complete your purchase.</p>' +
+    '<div class="cart-links">' + linksHtml + '</div>' +
+    '<p><a href="' + SHOP_HOME + '">Or browse the full shop</a></p>';
 })();
 </script>
 </body></html>
