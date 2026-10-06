@@ -7,3 +7,9 @@
   (marca descrita como feita com apoio de IA, sem "hand-painted" nem "made in the USA").
 - **Próximo passo:** definido pelo Canecas POD — este site não tem fila própria.
 - **Retomar em qualquer conta:** abrir a pasta, ler este arquivo e `git log --oneline -10`.
+
+## 🔗 Relacionados
+
+> Vizinhos por assunto (calculados automaticamente)
+
+- [[Índice — brushedandbrewed-site]]
