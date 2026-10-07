@@ -4,4 +4,4 @@
 > ficar solto no grafo. A lista de arquivos e subpastas é regenerada a
 > cada execução; linhas adicionadas à mão são preservadas abaixo.
 
-- [[brushedandbrewed-site/ESTADO|ESTADO]]
+- [[Canecas POD/brushedandbrewed-site/ESTADO|ESTADO]]

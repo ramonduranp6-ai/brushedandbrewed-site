@@ -10,6 +10,7 @@
 
 ## 🔗 Relacionados
 
-> Vizinhos por assunto (calculados automaticamente)
+> Ligações geradas automaticamente por `tecer-vault-obsidian.py` a
+> partir das citações que já existiam no texto acima.
 
-- [[Índice — brushedandbrewed-site]]
+- [[Canecas POD/00-INICIO|00-INICIO]]
